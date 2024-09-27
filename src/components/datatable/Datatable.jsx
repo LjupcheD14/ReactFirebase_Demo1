@@ -4,35 +4,51 @@ import {userColumns, userRows} from "../../datatablesource";
 import {Link} from "react-router-dom";
 import {useState, useEffect} from "react";
 
-import {collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {collection, getDocs, deleteDoc, doc, onSnapshot} from "firebase/firestore";
 import {db} from "../../firebase"
 
 const Datatable = () => {
     const [data, setData] = useState([]);
 
     useEffect(() => {
-        const fetchData = async () => {
+        // const fetchData = async () => {
+        //     let list = []
+        //     try {
+        //         const querySnapshot = await getDocs(collection(db, "users"));
+        //         querySnapshot.forEach((doc) => {
+        //             list.push({id: doc.id, ...doc.data()})
+        //         });
+        //         setData(list)
+        //         console.log(list)
+        //     } catch (err) {
+        //         console.log(err)
+        //     }
+        // }
+        // fetchData()
+        //
+        // LISTEN IN REAL TIME
+        const unsub = onSnapshot(collection(db, "users"), (snapShot) => {
             let list = []
-            try {
-                const querySnapshot = await getDocs(collection(db, "users"));
-                querySnapshot.forEach((doc) => {
-                    list.push({id: doc.id, ...doc.data()})
-                });
-                setData(list)
-                console.log(list)
-            } catch (err) {
-                console.log(err)
-            }
+            snapShot.docs.forEach((doc) => {
+                list.push({id: doc.id, ...doc.data()})
+            })
+            setData(list)
+        }, (error) => {
+            console.log(error)
+        });
+
+        return () => {
+            unsub()
         }
-        fetchData()
+
     }, [])
 
     console.log(data)
 
-    const handleDelete = async(id) => {
+    const handleDelete = async (id) => {
         try {
             await deleteDoc(doc(db, "users", id));
-        } catch (err){
+        } catch (err) {
             console.log(err)
         }
         setData(data.filter((item) => item.id !== id));
